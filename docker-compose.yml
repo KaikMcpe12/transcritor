@@ -1,0 +1,21 @@
+services:
+  transcritor:
+    build: .
+    image: transcritor:latest
+    # .env é opcional: só precisa dele para diarização (HF_TOKEN).
+    # Com --no-diarize você pode rodar sem criar o .env.
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      # coloque seus áudios aqui — acesso somente leitura dentro do container
+      - ./audio:/audio:ro
+      # arquivos gerados (transcricao_*, legenda_*.srt, legenda_*.vtt)
+      - ./output:/output
+      # cache dos modelos do HuggingFace + pyannote — persiste entre execuções
+      # (evita rebaixar ~2 GB toda vez)
+      - ./models:/models
+    # Uso:
+    #   docker compose run --rm transcritor /audio/meu-arquivo.mp3
+    # Sobrescrever o modelo:
+    #   docker compose run --rm -e WHISPER_MODEL=medium transcritor /audio/x.mp3

@@ -1,0 +1,26 @@
+# Keep the build context small — the image only needs transcrever.py.
+.git
+.gitignore
+.dockerignore
+.env
+.env.example
+
+# Mounted volumes (never baked into the image)
+audio/
+output/
+models/
+
+# Docs & packaging (not needed at build time)
+README.md
+README.pt-BR.md
+LICENSE
+docs/
+
+# Python cruft
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+build/
+dist/

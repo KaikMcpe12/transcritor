@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "transcritor"
+version = "1.0.0"
+description = "Offline audio transcription with word-level timestamps and optional speaker diarization (WhisperX, CPU-only)."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "KaikMcpe12" }]
+keywords = ["whisperx", "transcription", "diarization", "subtitles", "srt", "vtt", "speech-to-text"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+]
+# torch/torchaudio/torchvision come from PyTorch's CPU index — see requirements.txt.
+# Install those first (or use `pip install -r requirements.txt`), then `pip install .`.
+dependencies = ["whisperx==3.8.6"]
+
+[project.urls]
+Homepage = "https://github.com/KaikMcpe12/transcritor"
+Repository = "https://github.com/KaikMcpe12/transcritor"
+Issues = "https://github.com/KaikMcpe12/transcritor/issues"
+
+[project.scripts]
+transcritor = "transcrever:main"
+
+[tool.setuptools]
+py-modules = ["transcrever"]

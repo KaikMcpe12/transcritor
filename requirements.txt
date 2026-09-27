@@ -1,0 +1,19 @@
+# Dependencies for local (non-Docker) use — CPU only.
+# The --extra-index-url points pip at PyTorch's CPU wheels, so torch is
+# installed WITHOUT the ~4 GB of NVIDIA/CUDA libraries (useless on CPU).
+#
+# Recommended two-step install (mirrors the Dockerfile, most reliable):
+#   pip install torch==2.8.0 torchaudio==2.8.0 torchvision==0.23.0 \
+#       --index-url https://download.pytorch.org/whl/cpu
+#   pip install whisperx==3.8.6
+#
+# Or simply: pip install -r requirements.txt
+#
+# System dependency (not installable via pip): ffmpeg must be on your PATH.
+
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+torch==2.8.0
+torchaudio==2.8.0
+torchvision==0.23.0
+whisperx==3.8.6
