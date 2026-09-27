@@ -17,12 +17,14 @@ For each audio file it can generate:
 
 - 🎙️ **Transcription + word-level timestamps** via WhisperX
 - 👥 **Optional speaker diarization** — enabled by default; use `--no-diarize` to skip it
-  and **run without any HuggingFace token**
-- 📁 **Batch mode** — pass a folder and it transcribes every audio file, loading the models once
-- 🧩 **Multiple output formats** — `txt`, `srt`, `vtt`, `json` (pick with `--formats`)
-- 🐳 **Docker-first** but also **installable locally** (`pip install .`)
+  and **run without any HuggingFace token**. Guide it with `--min-speakers`/`--max-speakers`
+  and auto-rename labels with `--speakers "Alice,Bob"`
+- 📁 **Batch mode** — pass a folder and it transcribes every audio file, loading the models
+  once; `--skip-existing` resumes an interrupted run
+- 🧩 **Multiple output formats** — `txt`, `srt`, `vtt`, `json`, `md` (pick with `--formats`)
+- 🐳 **Docker-first** (prebuilt image on GHCR) but also **installable locally** (`pip install .`)
 - 💻 **CPU-only** — a slim ~2.5 GB image with no CUDA bloat
-- 🌍 **Any language** Whisper supports (defaults to Brazilian Portuguese, `pt`)
+- 🌍 **Any language** Whisper supports — `--language auto` detects it (defaults to `pt`)
 
 ## Requirements
 
@@ -82,6 +84,20 @@ docker compose run --rm transcritor /audio
 
 Generated files land in `./output/`.
 
+## Prebuilt image (no build)
+
+Don't want to wait for `docker compose build`? Pull the image published to the GitHub
+Container Registry and run it directly (flags go after the image name, before the audio path):
+
+```bash
+docker run --rm \
+  -v "$PWD/audio:/audio:ro" -v "$PWD/output:/output" -v "$PWD/models:/models" \
+  ghcr.io/kaikmcpe12/transcritor:latest --no-diarize /audio/my-file.mp3
+```
+
+For diarization, add `-e HF_TOKEN=your_token`. Images are published automatically by GitHub
+Actions on each release/tag (see `.github/workflows/docker-publish.yml`).
+
 ## Options
 
 All flags have environment-variable fallbacks, so the classic `docker compose run` invocation
@@ -91,18 +107,23 @@ keeps working unchanged.
 |------|---------|---------|-------------|
 | `input` (positional) | — | — | Audio file **or** folder |
 | `--model` | `WHISPER_MODEL` | `small` | `tiny` \| `base` \| `small` \| `medium` \| `large-v3` |
-| `--language` | `LANGUAGE` | `pt` | ISO 639-1 language code |
+| `--language` | `LANGUAGE` | `pt` | ISO 639-1 code, or `auto` to detect |
 | `--output` | `OUTPUT_DIR` | `.` | Output directory |
-| `--formats` | `FORMATS` | `txt,srt,vtt,json` | Comma-separated subset of the four formats |
+| `--formats` | `FORMATS` | `txt,srt,vtt,json` | Comma-separated subset of `txt,srt,vtt,json,md` |
 | `--no-diarize` | — | off | Skip speaker ID (no HuggingFace token required) |
+| `--speakers` | — | — | Rename `SPEAKER_00,01,…` in order, e.g. `"Alice,Bob"` |
+| `--min-speakers` | — | — | Minimum number of speakers (improves diarization) |
+| `--max-speakers` | — | — | Maximum number of speakers |
+| `--skip-existing` | — | off | In folder mode, skip files whose outputs already exist |
 | `--batch-size` | `BATCH_SIZE` | `8` | Lower it if you run out of RAM |
 | `--hf-token` | `HF_TOKEN` | — | HuggingFace token for diarization |
 
 Examples:
 
 ```bash
-docker compose run --rm transcritor --model medium --formats srt,json /audio/x.mp3
-docker compose run --rm transcritor --language en /audio/x.mp3
+docker compose run --rm transcritor --model medium --formats srt,json,md /audio/x.mp3
+docker compose run --rm transcritor --speakers "Alice,Bob" --max-speakers 2 /audio/x.mp3
+docker compose run --rm transcritor --language auto --skip-existing /audio
 ```
 
 ### Models
@@ -164,8 +185,14 @@ The fix: install `torch==2.8.0` from **PyTorch's CPU index** first (~200 MB, no 
 
 ## Renaming speakers
 
-With diarization, speakers come out as `SPEAKER_00`, `SPEAKER_01`… After identifying who's who,
-replace the labels:
+With diarization, speakers come out as `SPEAKER_00`, `SPEAKER_01`… The easiest way to name them
+is at run time, once you know who speaks first:
+
+```bash
+docker compose run --rm transcritor --speakers "Alice,Bob" /audio/x.mp3
+```
+
+Or rename them afterwards in the generated files:
 
 ```bash
 cd output

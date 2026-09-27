@@ -1,5 +1,6 @@
 # Keep the build context small — the image only needs transcrever.py.
 .git
+.github/
 .gitignore
 .dockerignore
 .env

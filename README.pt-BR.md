@@ -20,13 +20,14 @@ Gera, para cada áudio:
 
 - 🎙️ **Transcrição + timestamps por palavra** com WhisperX
 - 👥 **Diarização opcional** — ligada por padrão; use `--no-diarize` para pular
-  e **rodar sem nenhum token do HuggingFace**
+  e **rodar sem nenhum token do HuggingFace**. Guie com `--min-speakers`/`--max-speakers`
+  e renomeie os rótulos com `--speakers "Alice,Bob"`
 - 📁 **Modo lote** — aponte para uma pasta e ele transcreve todos os áudios, carregando os
-  modelos uma única vez
-- 🧩 **Vários formatos de saída** — `txt`, `srt`, `vtt`, `json` (escolha com `--formats`)
-- 🐳 **Docker-first**, mas também **instalável localmente** (`pip install .`)
+  modelos uma única vez; `--skip-existing` retoma um lote interrompido
+- 🧩 **Vários formatos de saída** — `txt`, `srt`, `vtt`, `json`, `md` (escolha com `--formats`)
+- 🐳 **Docker-first** (imagem pronta no GHCR), mas também **instalável localmente** (`pip install .`)
 - 💻 **Só CPU** — imagem enxuta (~2.5 GB), sem peso de CUDA
-- 🌍 **Qualquer idioma** que o Whisper suporta (padrão: português do Brasil, `pt`)
+- 🌍 **Qualquer idioma** que o Whisper suporta — `--language auto` detecta (padrão: `pt`)
 
 ## Requisitos
 
@@ -86,6 +87,20 @@ docker compose run --rm transcritor /audio
 
 Os arquivos gerados aparecem em `./output/`.
 
+## Imagem pronta (sem build)
+
+Não quer esperar o `docker compose build`? Baixe a imagem publicada no GitHub Container
+Registry e rode direto (as flags vão depois do nome da imagem, antes do caminho do áudio):
+
+```bash
+docker run --rm \
+  -v "$PWD/audio:/audio:ro" -v "$PWD/output:/output" -v "$PWD/models:/models" \
+  ghcr.io/kaikmcpe12/transcritor:latest --no-diarize /audio/meu-arquivo.mp3
+```
+
+Para diarização, acrescente `-e HF_TOKEN=seu_token`. As imagens são publicadas automaticamente
+pelo GitHub Actions a cada release/tag (veja `.github/workflows/docker-publish.yml`).
+
 ## Opções
 
 Todas as flags têm variável de ambiente equivalente, então o comando clássico
@@ -95,18 +110,23 @@ Todas as flags têm variável de ambiente equivalente, então o comando clássic
 |------|----------|--------|-----------|
 | `input` (posicional) | — | — | Arquivo de áudio **ou** pasta |
 | `--model` | `WHISPER_MODEL` | `small` | `tiny` \| `base` \| `small` \| `medium` \| `large-v3` |
-| `--language` | `LANGUAGE` | `pt` | Código ISO 639-1 do idioma |
+| `--language` | `LANGUAGE` | `pt` | Código ISO 639-1, ou `auto` para detectar |
 | `--output` | `OUTPUT_DIR` | `.` | Diretório de saída |
-| `--formats` | `FORMATS` | `txt,srt,vtt,json` | Subconjunto dos formatos, separados por vírgula |
+| `--formats` | `FORMATS` | `txt,srt,vtt,json` | Subconjunto de `txt,srt,vtt,json,md`, por vírgula |
 | `--no-diarize` | — | desligado | Não identificar falantes (dispensa o token) |
+| `--speakers` | — | — | Renomeia `SPEAKER_00,01,…` na ordem, ex.: `"Alice,Bob"` |
+| `--min-speakers` | — | — | Número mínimo de falantes (melhora a diarização) |
+| `--max-speakers` | — | — | Número máximo de falantes |
+| `--skip-existing` | — | desligado | Em modo pasta, pula áudios cujas saídas já existem |
 | `--batch-size` | `BATCH_SIZE` | `8` | Reduza se faltar RAM |
 | `--hf-token` | `HF_TOKEN` | — | Token do HuggingFace para diarização |
 
 Exemplos:
 
 ```bash
-docker compose run --rm transcritor --model medium --formats srt,json /audio/x.mp3
-docker compose run --rm transcritor --language en /audio/x.mp3
+docker compose run --rm transcritor --model medium --formats srt,json,md /audio/x.mp3
+docker compose run --rm transcritor --speakers "Alice,Bob" --max-speakers 2 /audio/x.mp3
+docker compose run --rm transcritor --language auto --skip-existing /audio
 ```
 
 ### Modelos
@@ -169,8 +189,14 @@ satisfaz `torch~=2.8.0`, o pip não reinstala. Resultado: imagem ~2.5 GB em vez 
 
 ## Renomear falantes
 
-Com diarização, os falantes vêm como `SPEAKER_00`, `SPEAKER_01`… Depois de identificar quem é
-quem, troque os rótulos:
+Com diarização, os falantes vêm como `SPEAKER_00`, `SPEAKER_01`… O jeito mais fácil de nomeá-los
+é já na execução, quando você sabe quem fala primeiro:
+
+```bash
+docker compose run --rm transcritor --speakers "Kaik,Professor" /audio/x.mp3
+```
+
+Ou trocar depois, nos arquivos gerados:
 
 ```bash
 cd output
