@@ -1,7 +1,5 @@
 # Transcritor (WhisperX + Docker)
 
-[English](README.md) · [Português](README.pt-BR.md)
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Offline audio-to-text transcription with **word-level timestamps** and **optional speaker
